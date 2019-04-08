@@ -1,3 +1,6 @@
 embeddings/*
 dump/*
 data/*
+.ipynb_checkpoints
+.idea
+tensorboard_log
