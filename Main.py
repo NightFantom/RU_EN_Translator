@@ -286,11 +286,11 @@ class Trainer:
             for key, val in metric_dict.items():
                 self.log_writer.add_scalar(f"train/{key}", val, current_epoch)
 
-            # temp_metrics = self.validate(validation_dataloader)
-            #
-            # for key, val in temp_metrics.items():
-            #     self.log_writer.add_scalar(f"validation/{key}", val,
-            #                                current_epoch)
+            temp_metrics = self.validate(validation_dataloader)
+
+            for key, val in temp_metrics.items():
+                self.log_writer.add_scalar(f"validation/{key}", val,
+                                           current_epoch)
 
     def process_one_pair(self, ru_vector, eng_vector):
         """
@@ -310,8 +310,6 @@ class Trainer:
         # Start from second token because we will compare prediction from token 'SOS' and next to him token
         for i in range(1, eng_vector.shape[1]):
             token = eng_vector[:, i]
-            # sequence_len = token.size()[0]
-            # token = token.view(eng_vector.shape[BATCH_SIZE_INDEX], -1, sequence_len)
             class_index = torch.argmax(token, dim=-1)
 
             Y, hidden_state = self.decoder(Y, hidden_state)
@@ -335,47 +333,41 @@ class Trainer:
 
     def validate(self, dataloader):
         bleu = 0
-        loss_val = 0
+        loss_torch = 0
         with torch.no_grad():
             for batch in dataloader:
 
-                # ru_vector shape [1, seq_len_1, fast_text_vect]
+                # ru_vector shape [batch_size, seq_len_1, fast_text_vect]
                 ru_vector = batch[RU_DS_LABEL]
-                # eng_vector shape [1, seq_len_2, vocab_size]
+                # eng_vector shape [batch_size, seq_len_2, vocab_size]
                 eng_vector = batch[EN_DS_LABEL]
 
                 X, hidden_state = self.encoder(ru_vector)
-
-                loss_torch = None
-
                 Y = self.SOS
 
                 sentence = []
                 target_sentence_list = []
                 for i in range(1, eng_vector.shape[1]):
-                    token = eng_vector[0][i]
-                    token = token.view(1, -1, token.size()[0])
+                    token = eng_vector[:, i]
                     class_index = torch.argmax(token, dim=-1)
-
-                    target_sentence_list.append(class_index[0].item())
 
                     Y, hidden_state = self.decoder(Y, hidden_state)
 
-                    temp_loss = self.loss(Y[0], class_index[0])
-                    if loss_torch is None:
-                        loss_torch = temp_loss
-                    else:
-                        loss_torch += temp_loss
-                    loss_val += temp_loss.item()
+                    # Check prediction of first tokens in batch
+                    Y = Y.view(BATCH_SIZE, -1)
+                    temp_loss = self.loss(Y, class_index)
+                    loss_torch += temp_loss
 
                     Y, word_index = self._get_pred_vect(Y)
+
+                    target_sentence_list.append(class_index[0].item())
                     sentence.append(word_index)
                     if Y is None:
                         break
                 bleu += sentence_bleu([sentence], target_sentence_list)
             bleu = bleu / len(dataloader.dataset)
 
-        return {LOSS_VAL: loss_val, BLEU_SCORE: bleu}
+        return {LOSS_VAL: loss_torch.item(), BLEU_SCORE: bleu}
 
     def predict(self, dataloader):
         dataloader = self._wrap_dataloader(dataloader)
@@ -406,12 +398,14 @@ class Trainer:
 
     def _get_pred_vect(self, Y):
         """
-        Y.shape (1,1,vocabular_size)
+        Y.shape (batch_size,1,vocabular_size)
         """
-        res = None
         _, word_index = Y.topk(1)
-        word_index = word_index.item()
-        res[0, 0, word_index] = 1
+        sequence_len = Y.size()[2]
+        batch_size = Y.size()[BATCH_SIZE_INDEX]
+        res = torch.zeros((batch_size, 1, sequence_len), device=self.device)
+        for i in range(0, word_index.shape[0]):
+            res[i, 0, word_index[i]] = 1
         return res, word_index
 
 
