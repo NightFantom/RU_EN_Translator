@@ -401,6 +401,8 @@ class Trainer:
                 sentence = self.normilize(sentence)
                 result.extend(sentence)
         result = torch.stack(result, dim=0)
+        if torch.cuda.is_available():
+            result = result.cpu()
         result = result.numpy()
         return result
 
