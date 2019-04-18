@@ -49,7 +49,7 @@ if not os.path.exists(TENSORBOARD_LOG):
 # In[ ]:
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"Chosen {device.type}:{device.index} device")
 
 
@@ -102,7 +102,7 @@ corpus_df.head()
 # In[ ]:
 
 
-corpus_df = corpus_df.iloc[:900]
+corpus_df = corpus_df.iloc[:200000]
 
 # # Convert English tokens in one hot vectors
 
@@ -512,9 +512,9 @@ trainer = Trainer(log_writer=log_writer,
                   hidden_size=hidden_size,
                   EOS=EOS_vector,
                   SOS=SOS_vector,
-                  epoch=5,
+                  epoch=100,
                   device=device,
-                  verbose=False,
+                  verbose=True,
                   model_save_path="./models")
 
 # In[ ]:
