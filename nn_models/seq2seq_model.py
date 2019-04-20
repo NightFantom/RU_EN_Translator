@@ -57,7 +57,7 @@ class Trainer:
                 ru_vector = batch[RU_DS_LABEL]
                 # eng_vector shape [1, seq_len_2, vocab_size]
                 eng_vector = batch[EN_DS_LABEL]
-                temp_metrics = self.process_one_pair(ru_vector, eng_vector)
+                temp_metrics = self.process_batch(ru_vector, eng_vector)
                 metric_dict[LOSS_VAL] += temp_metrics[LOSS_VAL]
 
             for key, val in metric_dict.items():
@@ -74,7 +74,7 @@ class Trainer:
                 self.best_loss = epoch_loss
                 self.save_model(current_epoch)
 
-    def process_one_pair(self, ru_vector, eng_vector):
+    def process_batch(self, ru_vector, eng_vector):
         """
         ru_vector shape [batch_size, seq_len_1, fast_text_vect]
         eng_vector shape [batch_size, seq_len_2, vocab_size]
