@@ -1,9 +1,10 @@
 import os
 import sys
+from typing import List
 
 import torch
 from tqdm import tqdm
-from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
+from nltk.translate.bleu_score import SmoothingFunction, corpus_bleu
 from translator_constants.global_constant import *
 from nn_models.decoder import Decoder
 from nn_models.encoder import Encoder
@@ -28,7 +29,8 @@ class Trainer:
                  epoch,
                  device,
                  verbose=False,
-                 model_save_path=None):
+                 model_save_path=None,
+                 english_vocab=None):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.encoder: Encoder = encoder
@@ -44,15 +46,17 @@ class Trainer:
         self.device = device
         self.model_save_path = model_save_path
         self.best_loss = sys.float_info.max
+        self.english_vocab = english_vocab
+        self.chencherry = SmoothingFunction()
 
     def train(self, dataloader, validation_dataloader):
-        dataloader = self._wrap_dataloader(dataloader)
-
         for current_epoch in range(1, self.epoch + 1):
+            epoch_dataloader = self._wrap_dataloader(dataloader)
+
             if self.verbose:
                 print(f"Epoch {current_epoch}")
             metric_dict = {LOSS_VAL: 0}
-            for batch in dataloader:
+            for batch in epoch_dataloader:
                 # ru_vector shape [1, seq_len_1, fast_text_vect]
                 ru_vector = batch[RU_DS_LABEL]
                 # eng_vector shape [1, seq_len_2, vocab_size]
@@ -63,7 +67,9 @@ class Trainer:
             for key, val in metric_dict.items():
                 self.log_writer.add_scalar(f"train/{key}", val, current_epoch)
 
-            temp_metrics = self.validate(validation_dataloader)
+            # Because tqdm fix initial time when it creats we have to put it here
+            epoch_validation_dataloader = self._wrap_dataloader(validation_dataloader)
+            temp_metrics = self.validate(epoch_validation_dataloader)
 
             for key, val in temp_metrics.items():
                 self.log_writer.add_scalar(f"validation/{key}", val,
@@ -91,8 +97,8 @@ class Trainer:
         Y = self.get_SOS_vector(batch_size)
 
         # Start from second token because we will compare prediction from token 'SOS' and next to him token
-        for i in range(1, eng_vector.shape[1]):
-            token = eng_vector[:, i]
+        for token_pos in range(1, eng_vector.shape[1]):
+            token = eng_vector[:, token_pos]
             class_index = torch.argmax(token, dim=-1)
 
             Y, hidden_state = self.decoder(Y, hidden_state)
@@ -197,13 +203,15 @@ class Trainer:
         word_index = word_index.view(-1)
         return res, word_index
 
-    def calculate_bleu(self, predicted_sentence, target_sentence_list):
-        target_sentence_torch = self.normilize(target_sentence_list)
+    def calculate_bleu(self, predicted_sentence:List[torch.Tensor], target_sentence:List[torch.Tensor]) -> float:
+        target_sentence_torch = self.normilize(target_sentence)
+        target_sentence_list= self.normilize_translation(target_sentence_torch)
         predicted_sentence_torch = self.normilize(predicted_sentence)
+        predicted_sentence_list = self.normilize_translation(predicted_sentence_torch)
         referenses = []
-        for row in predicted_sentence_torch:
+        for row in target_sentence_list:
             referenses.append([row])
-        bleu = corpus_bleu(referenses, target_sentence_torch)
+        bleu = corpus_bleu(referenses, predicted_sentence_list, smoothing_function=self.chencherry.method1)
         return bleu
 
     def normilize(self, matrix_list):
@@ -230,3 +238,15 @@ class Trainer:
         if vector.shape[0] > batch_size:
             vector = vector[:batch_size]
         return vector
+
+    def normilize_translation(self, sentences_torch: torch.Tensor) -> List[List[int]]:
+        corpus_list = []
+        for sentence_torch in sentences_torch:
+            sentence_list = []
+            corpus_list.append(sentence_list)
+            for word_torch in sentence_torch:
+                if len(sentence_list) == 0:
+                    sentence_list.append(word_torch.item())
+                elif sentence_list[-1] != word_torch:
+                    sentence_list.append(word_torch.item())
+        return corpus_list

@@ -35,6 +35,8 @@ def get_EOS(english_vocab):
     EOS_vector = EOS_vector[0][0]
     return EOS_vector
 
+def shrink(seq:list):
+    return seq[:glc.AMOUNT_OF_SAMPLES]
 
 if __name__ == "__main__":
 
@@ -45,6 +47,7 @@ if __name__ == "__main__":
     path = os.path.join(glc.BASE_PATH, "data/russian_meta/russian_token.pkl")
     with open(path, mode="rb") as file:
         ru_sentence_list = pickle.load(file)
+    ru_sentence_list = shrink(ru_sentence_list)
 
     path = os.path.join(glc.BASE_PATH, "data/russian_meta/vectorized_vocabulary.trch")
     vocabulary_torch = torch.load(path)
@@ -52,6 +55,7 @@ if __name__ == "__main__":
     path = os.path.join(glc.BASE_PATH, "data/english_meta/english_token.pkl")
     with open(path, mode="rb") as file:
         en_sentence_list = pickle.load(file)
+    en_sentence_list = shrink(en_sentence_list)
 
     path = os.path.join(glc.BASE_PATH, "data/english_meta/english_vocab.json")
     english_vocab = Vocabulary()
@@ -104,7 +108,8 @@ if __name__ == "__main__":
                       epoch=100,
                       device=device,
                       verbose=True,
-                      model_save_path=model_save_path)
+                      model_save_path=model_save_path,
+                      english_vocab=english_vocab)
 
     try:
         trainer.train(train_dataloader, test_dataloader)
