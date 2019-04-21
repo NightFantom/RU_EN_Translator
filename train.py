@@ -129,6 +129,7 @@ if __name__ == "__main__":
     decoder_optimizer = torch.optim.SGD(decoder.parameters(), lr=0.01)
 
     start_epoch = 1
+    best_loss = None
     model_path = find_the_last_model(model_save_path)
     if glc.CONTINUE_LEARNING and model_path is not None:
 
@@ -139,6 +140,7 @@ if __name__ == "__main__":
         encoder_optimizer.load_state_dict(model_dict[glc.ENCODER_OPTIMIZER_STATE_DICT])
         decoder_optimizer.load_state_dict(model_dict[glc.DECODER_OPTIMIZER_STATE_DICT])
         start_epoch = model_dict[glc.EPOCH] + 1
+        best_loss = model_dict.get(glc.THE_LOWEST_LOSS)
         print(f"Continue learning from epoch {start_epoch}")
     else:
         print("Start learning from the beginning")
@@ -170,7 +172,8 @@ if __name__ == "__main__":
                       model_save_path=model_save_path,
                       english_vocab=english_vocab,
                       runtime_config_path=runtime_config_path,
-                      start_epoch=start_epoch)
+                      start_epoch=start_epoch,
+                      best_loss=best_loss)
 
     try:
         trainer.train(train_dataloader, test_dataloader)

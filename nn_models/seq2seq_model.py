@@ -34,7 +34,8 @@ class Trainer:
                  model_save_path=None,
                  english_vocab=None,
                  runtime_config_path=None,
-                 start_epoch=1):
+                 start_epoch=1,
+                 best_loss=None):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.encoder: Encoder = encoder
@@ -49,7 +50,9 @@ class Trainer:
         self.verbose = verbose
         self.device = device
         self.model_save_path = model_save_path
-        self.best_loss = sys.float_info.max
+        if best_loss is None:
+            best_loss = sys.float_info.max
+        self.best_loss = best_loss
         self.english_vocab = english_vocab
         self.chencherry = SmoothingFunction()
         self.runtime_config_path = runtime_config_path
@@ -250,7 +253,8 @@ class Trainer:
             ENCODER_STATE_DICT: self.encoder.state_dict(),
             DECODER_STATE_DICT: self.decoder.state_dict(),
             ENCODER_OPTIMIZER_STATE_DICT: self.encoder_optimizer.state_dict(),
-            DECODER_OPTIMIZER_STATE_DICT: self.decoder_optimizer.state_dict()
+            DECODER_OPTIMIZER_STATE_DICT: self.decoder_optimizer.state_dict(),
+            THE_LOWEST_LOSS: self.best_loss
         }, model_path)
 
     def get_SOS_vector(self, batch_size):
