@@ -33,7 +33,8 @@ class Trainer:
                  verbose=False,
                  model_save_path=None,
                  english_vocab=None,
-                 runtime_config_path=None):
+                 runtime_config_path=None,
+                 start_epoch=1):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.encoder: Encoder = encoder
@@ -53,9 +54,10 @@ class Trainer:
         self.chencherry = SmoothingFunction()
         self.runtime_config_path = runtime_config_path
         self.runtime_config_dict = {}
+        self.start_epoch = start_epoch
 
     def train(self, dataloader, validation_dataloader):
-        for current_epoch in range(1, self.epoch + 1):
+        for current_epoch in range(self.start_epoch, self.epoch + 1):
             self.reload_config()
             epoch_dataloader = self._wrap_dataloader(dataloader)
 
@@ -217,9 +219,9 @@ class Trainer:
         word_index = word_index.view(-1)
         return res, word_index
 
-    def calculate_bleu(self, predicted_sentence:List[torch.Tensor], target_sentence:List[torch.Tensor]) -> float:
+    def calculate_bleu(self, predicted_sentence: List[torch.Tensor], target_sentence: List[torch.Tensor]) -> float:
         target_sentence_torch = self.normilize(target_sentence)
-        target_sentence_list= self.normilize_translation(target_sentence_torch)
+        target_sentence_list = self.normilize_translation(target_sentence_torch)
         predicted_sentence_torch = self.normilize(predicted_sentence)
         predicted_sentence_list = self.normilize_translation(predicted_sentence_torch)
         referenses = []
@@ -239,13 +241,16 @@ class Trainer:
         return matrix_tensor
 
     def save_model(self, epoch):
-        directory = os.path.join(self.model_save_path, f"model_{epoch}")
-        os.makedirs(directory)
-        encoder_path = os.path.join(directory, "encoder.pt")
-        torch.save(self.encoder.state_dict(), encoder_path)
-
-        decoder_path = os.path.join(directory, "decoder.pt")
-        torch.save(self.decoder.state_dict(), decoder_path)
+        # directory = os.path.join(self.model_save_path, f"model_{epoch}")
+        # os.makedirs(directory)
+        model_path = os.path.join(self.model_save_path, f"model_ckeckpoint_{epoch}.pt")
+        torch.save({
+            EPOCH: epoch,
+            ENCODER_STATE_DICT: self.encoder.state_dict(),
+            DECODER_STATE_DICT: self.decoder.state_dict(),
+            ENCODER_OPTIMIZER_STATE_DICT: self.encoder_optimizer.state_dict(),
+            DECODER_OPTIMIZER_STATE_DICT: self.decoder_optimizer.state_dict()
+        }, model_path)
 
     def get_SOS_vector(self, batch_size):
         vector = self.SOS
@@ -264,7 +269,6 @@ class Trainer:
                 elif sentence_list[-1] != word_torch:
                     sentence_list.append(word_torch.item())
         return corpus_list
-
 
     def reload_config(self):
         try:

@@ -1,3 +1,5 @@
+import glob
+
 import torch
 import pickle
 import os
@@ -35,8 +37,25 @@ def get_EOS(english_vocab):
     EOS_vector = EOS_vector[0][0]
     return EOS_vector
 
-def shrink(seq:list):
+
+def shrink(seq: list):
     return seq[:glc.AMOUNT_OF_SAMPLES]
+
+
+def find_the_last_model(path):
+    path = os.path.join(path, "*.pt")
+    model_list = glob.glob(path)
+    max_epoch = -1
+    the_last_model_path = None
+    for model_path in model_list:
+        model = os.path.basename(model_path)
+        name, _ = os.path.splitext(model)
+        epoch = int(name.split("_")[-1])
+        if max_epoch < epoch:
+            max_epoch = epoch
+            the_last_model_path = model_path
+    return the_last_model_path
+
 
 if __name__ == "__main__":
 
@@ -78,11 +97,28 @@ if __name__ == "__main__":
     vocabular_input_size = english_vocab.max_index + 1
     hidden_size = 300
 
+    model_save_path = os.path.join(glc.BASE_PATH, "models")
+
     encoder = Encoder(input_size, hidden_size).to(device)
     decoder = Decoder(hidden_size, hidden_size, vocabular_input_size).to(device)
 
     encoder_optimizer = torch.optim.SGD(encoder.parameters(), lr=0.01)
     decoder_optimizer = torch.optim.SGD(decoder.parameters(), lr=0.01)
+
+    start_epoch = 1
+
+    if glc.CONTINUE_LEARNING and model_save_path is not None:
+        model_path = find_the_last_model(model_save_path)
+        model_dict = torch.load(model_path)
+        encoder.load_state_dict(model_dict[glc.ENCODER_STATE_DICT])
+        decoder.load_state_dict(model_dict[glc.DECODER_STATE_DICT])
+
+        encoder_optimizer.load_state_dict(model_dict[glc.ENCODER_OPTIMIZER_STATE_DICT])
+        decoder_optimizer.load_state_dict(model_dict[glc.DECODER_OPTIMIZER_STATE_DICT])
+        start_epoch = model_dict[glc.EPOCH] + 1
+        print(f"Continue learning from epoch {start_epoch}")
+    else:
+        print("Start learning from the beginning")
 
     loss_function = torch.nn.NLLLoss()
 
@@ -93,7 +129,6 @@ if __name__ == "__main__":
     log_path = os.path.join(TENSORBOARD_LOG, f"test_{experiment_number}")
     log_writer = SummaryWriter(log_path)
 
-    model_save_path = os.path.join(glc.BASE_PATH, "models")
     runtime_config_path = os.path.join(glc.BASE_PATH, "runtime_config.json")
 
     trainer = Trainer(log_writer=log_writer,
@@ -111,7 +146,8 @@ if __name__ == "__main__":
                       verbose=True,
                       model_save_path=model_save_path,
                       english_vocab=english_vocab,
-                      runtime_config_path=runtime_config_path)
+                      runtime_config_path=runtime_config_path,
+                      start_epoch=start_epoch)
 
     try:
         trainer.train(train_dataloader, test_dataloader)

@@ -14,6 +14,13 @@ STOP_COMMAND_KEY = "stop"
 
 AMOUNT_OF_SAMPLES = 200000
 BATCH_SIZE = 50
+CONTINUE_LEARNING = True
 
 BASE_PATH = "."
 FAST_TEXT_VECTOR_SIZE = 300
+
+EPOCH = 'epoch'
+ENCODER_STATE_DICT = 'encoder_state_dict'
+DECODER_STATE_DICT = 'decoder_state_dict'
+ENCODER_OPTIMIZER_STATE_DICT = 'encoder_optimizer_state_dict'
+DECODER_OPTIMIZER_STATE_DICT = 'decoder_optimizer_state_dict'
