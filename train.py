@@ -63,6 +63,8 @@ if __name__ == "__main__":
         os.makedirs(TENSORBOARD_LOG)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Chosen {device.type}:{device.index} device")
+
     path = os.path.join(glc.BASE_PATH, "data/russian_meta/russian_token.pkl")
     with open(path, mode="rb") as file:
         ru_sentence_list = pickle.load(file)
