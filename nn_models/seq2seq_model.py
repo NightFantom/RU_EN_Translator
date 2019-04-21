@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+import traceback
 from typing import List
 
 import torch
@@ -30,7 +32,8 @@ class Trainer:
                  device,
                  verbose=False,
                  model_save_path=None,
-                 english_vocab=None):
+                 english_vocab=None,
+                 runtime_config_path=None):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.encoder: Encoder = encoder
@@ -48,9 +51,12 @@ class Trainer:
         self.best_loss = sys.float_info.max
         self.english_vocab = english_vocab
         self.chencherry = SmoothingFunction()
+        self.runtime_config_path = runtime_config_path
+        self.runtime_config_dict = {}
 
     def train(self, dataloader, validation_dataloader):
         for current_epoch in range(1, self.epoch + 1):
+            self.reload_config()
             epoch_dataloader = self._wrap_dataloader(dataloader)
 
             if self.verbose:
@@ -79,6 +85,14 @@ class Trainer:
             if current_epoch > 1 and epoch_loss < self.best_loss:
                 self.best_loss = epoch_loss
                 self.save_model(current_epoch)
+
+            if self.runtime_config_dict.get(STOP_COMMAND_KEY, False):
+                if self.verbose:
+                    print("Stoping traning")
+                if self.best_loss != epoch_loss:
+                    print(f"Save the last model: model_{current_epoch}")
+                    self.save_model(current_epoch)
+                break
 
     def process_batch(self, ru_vector, eng_vector):
         """
@@ -250,3 +264,12 @@ class Trainer:
                 elif sentence_list[-1] != word_torch:
                     sentence_list.append(word_torch.item())
         return corpus_list
+
+
+    def reload_config(self):
+        try:
+            with open(self.runtime_config_path, mode="r") as file:
+                new_config = json.load(file)
+            self.runtime_config_dict = new_config
+        except Exception as e:
+            traceback.print_tb(e)

@@ -94,6 +94,7 @@ if __name__ == "__main__":
     log_writer = SummaryWriter(log_path)
 
     model_save_path = os.path.join(glc.BASE_PATH, "models")
+    runtime_config_path = os.path.join(glc.BASE_PATH, "runtime_config.json")
 
     trainer = Trainer(log_writer=log_writer,
                       encoder=encoder,
@@ -109,7 +110,8 @@ if __name__ == "__main__":
                       device=device,
                       verbose=True,
                       model_save_path=model_save_path,
-                      english_vocab=english_vocab)
+                      english_vocab=english_vocab,
+                      runtime_config_path=runtime_config_path)
 
     try:
         trainer.train(train_dataloader, test_dataloader)
