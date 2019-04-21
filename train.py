@@ -116,6 +116,6 @@ if __name__ == "__main__":
     try:
         trainer.train(train_dataloader, test_dataloader)
     except Exception as e:
-        traceback.print_tb(e)
+        traceback.print_exc()
     finally:
         log_writer.close()
