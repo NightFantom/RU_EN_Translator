@@ -2,12 +2,13 @@ import torch
 from typing import List
 from torch.utils.data import Dataset
 import translator_constants.global_constant as glc
+from text_utils.utils import add_padding
 
 
 class RUENDataset(Dataset):
 
     def __init__(self, ru_data_list, en_data_list, ru_encoder, en_encoder, device,
-                 ru_sentence_len=41, en_sentence_len=47):
+                 ru_sentence_len=glc.MAX_RUSSIAN_SEQUENCE_LEN, en_sentence_len=glc.MAX_ENGLISH_SEQUENCE_LEN):
         self.ru_data: List[List[int]] = ru_data_list
         self.en_data: List[List[int]] = en_data_list
         self.en_encoder = en_encoder
@@ -28,7 +29,7 @@ class RUENDataset(Dataset):
     def _get_ru_sentence(self, pos):
         ru_sentence_list = self.ru_data[pos]
         vector = self.ru_encoder.transform(ru_sentence_list)
-        vector = self.__add_padding(vector, self.ru_sentence_len)
+        vector = add_padding(vector, self.ru_sentence_len)
         return vector
 
     def _get_en_sentence(self, pos):
@@ -36,15 +37,6 @@ class RUENDataset(Dataset):
         vector = self.en_encoder.transform(en_sentence_list)
         # vector.shape (word_in_sentence, features)
         vector = torch.tensor(vector, dtype=torch.float32, device=self.device)
-        vector = self.__add_padding(vector, self.en_sentence_len)
+        vector = add_padding(vector, self.en_sentence_len)
         return vector
 
-    def __add_padding(self, vector, size):
-        if vector.shape[0] < size:
-            pad_end_of_sentence = size - vector.shape[0]
-            matrix_list = [vector[-1]] * pad_end_of_sentence
-            paddin_tensor = torch.stack(matrix_list, dim=0)
-            vector = torch.cat((vector, paddin_tensor), dim=0)
-        elif vector.shape[0] > size:
-            vector = vector[:size]
-        return vector

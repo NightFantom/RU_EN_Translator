@@ -23,7 +23,7 @@ from tensorboardX import SummaryWriter
 TENSORBOARD_LOG = os.path.join(glc.BASE_PATH, "tensorboard_log")
 
 
-def get_SOS(device):
+def get_SOS(device, english_vocab, en_encoder):
     SOS_vector = [[glc.SOS_LABEL]] * glc.BATCH_SIZE
     SOS_vector = english_vocab.transform(SOS_vector)
     SOS_vector = en_encoder.transform(SOS_vector)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     loss_function = torch.nn.NLLLoss()
 
     EOS_vector = get_EOS(english_vocab)
-    SOS_vector = get_SOS(device)
+    SOS_vector = get_SOS(device, english_vocab, en_encoder)
 
     experiment_number = 0
     log_path = os.path.join(TENSORBOARD_LOG, f"test_{experiment_number}")

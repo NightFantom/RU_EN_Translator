@@ -25,3 +25,6 @@ DECODER_STATE_DICT = 'decoder_state_dict'
 ENCODER_OPTIMIZER_STATE_DICT = 'encoder_optimizer_state_dict'
 DECODER_OPTIMIZER_STATE_DICT = 'decoder_optimizer_state_dict'
 THE_LOWEST_LOSS = "the_lowest_loss"
+
+MAX_ENGLISH_SEQUENCE_LEN = 47
+MAX_RUSSIAN_SEQUENCE_LEN = 41

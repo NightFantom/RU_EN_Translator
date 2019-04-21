@@ -179,29 +179,20 @@ class Trainer:
 
         return {LOSS_VAL: loss_torch.item(), BLEU_SCORE: bleu}
 
-    def predict(self, dataloader):
-        dataloader = self._wrap_dataloader(dataloader)
-        result = []
+    def predict_batch(self, ru_vector: torch.Tensor) -> List[List[int]]:
         with torch.no_grad():
-            for batch in dataloader:
-                sentence = []
-                ru_vector = batch[RU_DS_LABEL]
-
-                X, hidden_state = self.encoder(ru_vector)
-                batch_size = X.shape[0]
-                Y = self.get_SOS_vector(batch_size)
-                for i in range(1, ru_vector.shape[1]):
-                    Y, hidden_state = self.decoder(Y, hidden_state)
-                    Y = Y.view(batch_size, -1)
-                    Y, word_index = self._get_pred_vect(Y)
-                    sentence.append(word_index)
-                sentence = self.normilize(sentence)
-                result.extend(sentence)
-        result = torch.stack(result, dim=0)
-        if torch.cuda.is_available():
-            result = result.cpu()
-        result = result.numpy()
-        return result
+            sentence = []
+            X, hidden_state = self.encoder(ru_vector)
+            batch_size = X.shape[0]
+            Y = self.get_SOS_vector(batch_size)
+            for i in range(1, ru_vector.shape[1]):
+                Y, hidden_state = self.decoder(Y, hidden_state)
+                Y = Y.view(batch_size, -1)
+                Y, word_index = self._get_pred_vect(Y)
+                sentence.append(word_index)
+            sentence = self.normilize(sentence)
+            sentence = self.normilize_translation(sentence)
+        return sentence
 
     def _wrap_dataloader(self, dataloader):
         if self.verbose:
