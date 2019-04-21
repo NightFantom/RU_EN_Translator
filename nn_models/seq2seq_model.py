@@ -271,5 +271,5 @@ class Trainer:
             with open(self.runtime_config_path, mode="r") as file:
                 new_config = json.load(file)
             self.runtime_config_dict = new_config
-        except Exception as e:
-            traceback.print_tb(e)
+        except Exception:
+            traceback.print_exc()
