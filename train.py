@@ -108,9 +108,9 @@ if __name__ == "__main__":
     decoder_optimizer = torch.optim.SGD(decoder.parameters(), lr=0.01)
 
     start_epoch = 1
+    model_path = find_the_last_model(model_save_path)
+    if glc.CONTINUE_LEARNING and model_path is not None:
 
-    if glc.CONTINUE_LEARNING and model_save_path is not None:
-        model_path = find_the_last_model(model_save_path)
         model_dict = torch.load(model_path)
         encoder.load_state_dict(model_dict[glc.ENCODER_STATE_DICT])
         decoder.load_state_dict(model_dict[glc.DECODER_STATE_DICT])
