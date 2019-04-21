@@ -85,6 +85,7 @@ class Trainer:
 
             epoch_loss = temp_metrics[LOSS_VAL]
             if current_epoch > 1 and epoch_loss < self.best_loss:
+                print(f"Epoch {current_epoch}: Achieved new best model")
                 self.best_loss = epoch_loss
                 self.save_model(current_epoch)
 
