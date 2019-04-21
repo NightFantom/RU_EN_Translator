@@ -1,24 +1,22 @@
 import glob
-
-import torch
-import pickle
 import os
+import pickle
 import traceback
 
+import torch
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from tensorboardX import SummaryWriter
+from torch.utils.data import DataLoader
+
+import translator_constants.global_constant as glc
+from dataset.ru_en_dataset import RUENDataset
+from dataset.ru_encoder import RUEncoderVoc
 from gpu_utils.gpu_utils import get_device
 from nn_models.decoder import Decoder
 from nn_models.encoder import Encoder
 from nn_models.seq2seq_model import Trainer
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
-from torch.utils.data import DataLoader
-
-from dataset.ru_en_dataset import RUENDataset
-from dataset.ru_encoder import RUEncoderVoc
-import translator_constants.global_constant as glc
 from text_utils.vocabulary import Vocabulary
-from tensorboardX import SummaryWriter
 
 TENSORBOARD_LOG = os.path.join(glc.BASE_PATH, "tensorboard_log")
 
@@ -43,6 +41,22 @@ def shrink(seq: list):
     return seq[:glc.AMOUNT_OF_SAMPLES]
 
 
+def get_experiment_folder_name():
+    pattern = os.path.join(TENSORBOARD_LOG, f"test_*")
+    max_index = 0
+    folder_list = glob.glob(pattern)
+    if len(folder_list) > 0:
+        for folder_name in folder_list:
+            folder_name = os.path.basename(folder_name)
+            index = int(folder_name.split("_")[-1])
+            if index > max_index:
+                max_index = index
+
+    experiment_number = max_index + 1
+    log_path = os.path.join(TENSORBOARD_LOG, f"test_{experiment_number}")
+    return log_path
+
+
 def find_the_last_model(path):
     path = os.path.join(path, "*.pt")
     model_list = glob.glob(path)
@@ -58,7 +72,7 @@ def find_the_last_model(path):
     return the_last_model_path
 
 
-if __name__ == "__main__":
+def main():
 
     if not os.path.exists(TENSORBOARD_LOG):
         os.makedirs(TENSORBOARD_LOG)
@@ -130,8 +144,7 @@ if __name__ == "__main__":
     EOS_vector = get_EOS(english_vocab)
     SOS_vector = get_SOS(device, english_vocab, en_encoder)
 
-    experiment_number = 0
-    log_path = os.path.join(TENSORBOARD_LOG, f"test_{experiment_number}")
+    log_path = get_experiment_folder_name()
     log_writer = SummaryWriter(log_path)
 
     runtime_config_path = os.path.join(glc.BASE_PATH, "runtime_config.json")
@@ -161,3 +174,7 @@ if __name__ == "__main__":
         traceback.print_exc()
     finally:
         log_writer.close()
+
+
+if __name__ == "__main__":
+    main()
