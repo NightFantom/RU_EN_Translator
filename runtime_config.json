@@ -1,3 +1,4 @@
 {
-  "stop": false
+  "stop": false,
+  "save_each_n_epoch": 3
 }

@@ -87,9 +87,13 @@ class Trainer:
                                            current_epoch)
 
             epoch_loss = temp_metrics[LOSS_VAL]
+            divider = self.runtime_config_dict.get(SAVE_EACH_N_EPOCH, -1)
             if current_epoch > 1 and epoch_loss < self.best_loss:
                 print(f"Epoch {current_epoch}: Achieved new best model")
                 self.best_loss = epoch_loss
+                self.save_model(current_epoch)
+            elif divider > 0 and current_epoch % divider == 0:
+                print(f"Epoch {current_epoch}: Checkpoint")
                 self.save_model(current_epoch)
 
             if self.runtime_config_dict.get(STOP_COMMAND_KEY, False):
