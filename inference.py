@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     model_path = find_the_last_model(model_save_path)
     if model_path is not None:
-
+        print(f"Using model {model_path}")
         model_dict = torch.load(model_path)
         encoder.load_state_dict(model_dict[glc.ENCODER_STATE_DICT])
         decoder.load_state_dict(model_dict[glc.DECODER_STATE_DICT])
