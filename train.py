@@ -102,7 +102,7 @@ def main():
     en_encoder = LabelBinarizer(sparse_output=False)
     en_encoder.fit(range(english_vocab.max_index + 1))
 
-    X_train, X_test, Y_train, Y_test = train_test_split(ru_sentence_list, en_sentence_list)
+    X_train, X_test, Y_train, Y_test = train_test_split(ru_sentence_list, en_sentence_list, random_state=42)
 
     train_data_set = RUENDataset(X_train, Y_train, ru_encoder, en_encoder, device=device)
     train_dataloader = DataLoader(train_data_set, batch_size=glc.BATCH_SIZE, shuffle=True)
