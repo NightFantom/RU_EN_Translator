@@ -75,6 +75,7 @@ class Trainer:
                 temp_metrics = self.process_batch(ru_vector, eng_vector)
                 metric_dict[LOSS_VAL] += temp_metrics[LOSS_VAL]
 
+            metric_dict[LOSS_VAL] = self.normilize_cummulative_loss(metric_dict[LOSS_VAL], len(epoch_dataloader))
             for key, val in metric_dict.items():
                 self.log_writer.add_scalar(f"train/{key}", val, current_epoch)
 
@@ -104,6 +105,12 @@ class Trainer:
                     print(f"Save the last model: model_{current_epoch}")
                     self.save_model(current_epoch)
                 break
+
+    def normilize_cummulative_loss(self, loss:float, amount_of_elements: int) -> float:
+        """
+        Calculate loss per sentence cross batches
+        """
+        return loss / amount_of_elements
 
     def process_batch(self, ru_vector, eng_vector):
         """
@@ -138,7 +145,8 @@ class Trainer:
             # Teaching force mode. Using next token from true sequence
             Y = token.view(batch_size, 1, -1)
 
-        temp_metrics[LOSS_VAL] = loss_torch.item()
+        # Calculate loss per sentence
+        temp_metrics[LOSS_VAL] = self.normilize_cummulative_loss(loss_torch.item(), batch_size)
         loss_torch.backward()
         self.encoder_optimizer.step()
         self.decoder_optimizer.step()
@@ -151,6 +159,7 @@ class Trainer:
         batch_amount = 0
         with torch.no_grad():
             for batch in dataloader:
+                loss_torch_per_batch = 0
                 batch_amount += 1
                 # ru_vector shape [batch_size, seq_len_1, fast_text_vect]
                 ru_vector = batch[RU_DS_LABEL]
@@ -172,17 +181,19 @@ class Trainer:
                     # Check prediction of first tokens in batch
                     Y = Y.view(batch_size, -1)
                     temp_loss = self.loss(Y, class_index)
-                    loss_torch += temp_loss
+                    loss_torch_per_batch += temp_loss
 
                     Y, word_index = self._get_pred_vect(Y)
 
                     target_sentence_list.append(class_index)
                     sentence.append(word_index)
 
+                loss_torch += self.normilize_cummulative_loss(loss_torch_per_batch.item(), batch_size)
                 bleu += self.calculate_bleu(sentence, target_sentence_list)
             bleu = bleu / batch_amount
 
-        return {LOSS_VAL: loss_torch.item(), BLEU_SCORE: bleu}
+        loss_torch = self.normilize_cummulative_loss(loss_torch, len(dataloader))
+        return {LOSS_VAL: loss_torch, BLEU_SCORE: bleu}
 
     def predict_batch(self, ru_vector: torch.Tensor) -> List[List[int]]:
         with torch.no_grad():
