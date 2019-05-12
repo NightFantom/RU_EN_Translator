@@ -43,7 +43,7 @@ if __name__ == "__main__":
     model_save_path = os.path.join(glc.BASE_PATH, "models")
 
     encoder = Encoder(input_size, hidden_size).to(device)
-    decoder = AttentionDecoder(hidden_size, hidden_size, vocabular_input_size).to(device)
+    decoder = AttentionDecoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
 
     model_path = find_the_last_model(model_save_path)
     if model_path is not None:
