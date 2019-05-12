@@ -166,7 +166,7 @@ def main():
                       hidden_size=hidden_size,
                       EOS=EOS_vector,
                       SOS=SOS_vector,
-                      epoch=100,
+                      epoch=glc.EPOCH_NUMBER,
                       device=device,
                       verbose=True,
                       model_save_path=model_save_path,
