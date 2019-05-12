@@ -14,6 +14,7 @@ from dataset.ru_en_dataset import RUENDataset
 from dataset.ru_encoder import RUEncoderVoc
 from gpu_utils.gpu_utils import get_device
 from nn_models.decoder import Decoder
+from nn_models.decoder_with_attention import AttentionDecoder
 from nn_models.encoder import Encoder
 from nn_models.seq2seq_model import Trainer
 from text_utils.vocabulary import Vocabulary
@@ -117,7 +118,13 @@ def main():
     model_save_path = os.path.join(glc.BASE_PATH, "models")
 
     encoder = Encoder(input_size, hidden_size).to(device)
-    decoder = Decoder(hidden_size, hidden_size, vocabular_input_size).to(device)
+    decoder = Decoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
+
+    encoder_total_params = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
+    decoder_total_params = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
+    print(f"Encoder parameters: {encoder_total_params}")
+    print(f"Decoder parameters: {decoder_total_params}")
+    print(f"Total parameters: {encoder_total_params + decoder_total_params}")
 
     encoder_optimizer = torch.optim.SGD(encoder.parameters(), lr=0.01)
     decoder_optimizer = torch.optim.SGD(decoder.parameters(), lr=0.01)

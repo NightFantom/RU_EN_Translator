@@ -121,11 +121,11 @@ class Trainer:
         self.decoder_optimizer.zero_grad()
         temp_metrics = {}
 
-        X, hidden_state = self.encoder(ru_vector)
+        encoder_output, hidden_state = self.encoder(ru_vector)
 
         loss_torch = 0
 
-        batch_size = X.shape[0]
+        batch_size = encoder_output.shape[0]
         Y = self.get_SOS_vector(batch_size)
 
         # Start from second token because we will compare prediction from token 'SOS' and next to him token
@@ -133,7 +133,7 @@ class Trainer:
             token = eng_vector[:, token_pos]
             class_index = torch.argmax(token, dim=-1)
 
-            Y, hidden_state = self.decoder(Y, hidden_state)
+            Y, hidden_state = self.decoder(Y, hidden_state, encoder_output)
 
             # Check prediction of first tokens in batch
             Y = Y.view(batch_size, -1)
@@ -166,8 +166,8 @@ class Trainer:
                 # eng_vector shape [batch_size, seq_len_2, vocab_size]
                 eng_vector = batch[EN_DS_LABEL]
 
-                X, hidden_state = self.encoder(ru_vector)
-                batch_size = X.shape[0]
+                encoder_output, hidden_state = self.encoder(ru_vector)
+                batch_size = encoder_output.shape[0]
                 Y = self.get_SOS_vector(batch_size)
 
                 sentence = []
@@ -176,7 +176,7 @@ class Trainer:
                     token = eng_vector[:, i]
                     class_index = torch.argmax(token, dim=-1)
 
-                    Y, hidden_state = self.decoder(Y, hidden_state)
+                    Y, hidden_state = self.decoder(Y, hidden_state, encoder_output)
 
                     # Check prediction of first tokens in batch
                     Y = Y.view(batch_size, -1)
@@ -198,11 +198,11 @@ class Trainer:
     def predict_batch(self, ru_vector: torch.Tensor) -> List[List[int]]:
         with torch.no_grad():
             sentence = []
-            X, hidden_state = self.encoder(ru_vector)
-            batch_size = X.shape[0]
+            encoder_output, hidden_state = self.encoder(ru_vector)
+            batch_size = encoder_output.shape[0]
             Y = self.get_SOS_vector(batch_size)
             for i in range(1, ru_vector.shape[1]):
-                Y, hidden_state = self.decoder(Y, hidden_state)
+                Y, hidden_state = self.decoder(Y, hidden_state, encoder_output)
                 Y = Y.view(batch_size, -1)
                 Y, word_index = self._get_pred_vect(Y)
                 sentence.append(word_index)

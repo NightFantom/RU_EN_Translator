@@ -4,14 +4,14 @@ import torch
 
 class Decoder(nn.Module):
 
-    def __init__(self, input_size, hidden_vector_size, vocabular_size):
+    def __init__(self, input_size, hidden_vector_size, vocabular_size, device):
         super().__init__()
         self.dence_in = nn.Linear(vocabular_size, input_size)
         self.decoder = nn.LSTM(batch_first=True, input_size=input_size, hidden_size=hidden_vector_size)
         self.dence_out = nn.Linear(hidden_vector_size, vocabular_size)
         self.log_soft_max = nn.LogSoftmax(dim=-1)
 
-    def forward(self, X, hidden_state):
+    def forward(self, X, hidden_state, encoder_output):
         """
         Input: X.shape (batch_size, 1, vocabular_size)
         Return: X.shape (batch_size, 1, vocabular_size)
