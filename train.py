@@ -73,6 +73,11 @@ def find_the_last_model(path):
     return the_last_model_path
 
 
+def create_if_not_exist(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def main():
 
     if not os.path.exists(TENSORBOARD_LOG):
@@ -115,7 +120,8 @@ def main():
     vocabular_input_size = english_vocab.max_index + 1
     hidden_size = 300
 
-    model_save_path = os.path.join(glc.BASE_PATH, "models")
+    model_save_path = os.path.join(glc.BASE_PATH, f"models/experiment_{glc.EXPERIMENT_ID}")
+    create_if_not_exist(model_save_path)
 
     encoder = Encoder(input_size, hidden_size).to(device)
     decoder = AttentionDecoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
@@ -151,7 +157,8 @@ def main():
     EOS_vector = get_EOS(english_vocab)
     SOS_vector = get_SOS(device, english_vocab, en_encoder)
 
-    log_path = get_experiment_folder_name()
+    # log_path = get_experiment_folder_name()
+    log_path = os.path.join(TENSORBOARD_LOG, f"test_{glc.EXPERIMENT_ID}")
     log_writer = SummaryWriter(log_path)
 
     runtime_config_path = os.path.join(glc.BASE_PATH, "runtime_config.json")
