@@ -118,7 +118,7 @@ def main():
     model_save_path = os.path.join(glc.BASE_PATH, "models")
 
     encoder = Encoder(input_size, hidden_size).to(device)
-    decoder = Decoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
+    decoder = AttentionDecoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
 
     encoder_total_params = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
     decoder_total_params = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
