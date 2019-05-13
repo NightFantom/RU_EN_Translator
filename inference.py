@@ -40,7 +40,7 @@ if __name__ == "__main__":
     vocabular_input_size = english_vocab.max_index + 1
     hidden_size = 300
 
-    model_save_path = os.path.join(glc.BASE_PATH, "models")
+    model_save_path = os.path.join(glc.BASE_PATH, f"models/experiment_{glc.EXPERIMENT_ID}")
 
     encoder = Encoder(input_size, hidden_size).to(device)
     decoder = AttentionDecoder(hidden_size, hidden_size, vocabular_input_size, device).to(device)
